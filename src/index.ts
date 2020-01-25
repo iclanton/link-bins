@@ -3,7 +3,7 @@ import binify from '@pnpm/package-bins'
 import {PackageJson} from '@pnpm/types'
 import cmdShim = require('@zkochan/cmd-shim')
 import isWindows = require('is-windows')
-import mkdirp = require('mkdirp-promise')
+import mkdirp = require('mkdirp')
 import Module = require('module')
 import fs = require('mz/fs')
 import normalizePath = require('normalize-path')
@@ -39,7 +39,18 @@ export async function linkPackageBins (target: string, binPath: string) {
 
   if (!cmds.length) return
 
-  await mkdirp(binPath)
+  await new Promise((resolve: () => void, reject: (error: Error) => void) => {
+    mkdirp(
+      binPath,
+      (err: NodeJS.ErrnoException | undefined, made: mkdirp.Made) => {
+        if (err) {
+          reject(err);
+        } else {
+          resolve();
+        }
+      },
+    );
+  })
   await Promise.all(cmds.map(async (cmd) => {
     const externalBinPath = path.join(binPath, cmd.name)
 
