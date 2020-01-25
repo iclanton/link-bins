@@ -14,6 +14,12 @@ import getPkgDirs from './getPkgDirs'
 
 const IS_WINDOWS = isWindows()
 
+function mkdirPromise (dir: string, options: mkdirp.Options = {}) {
+  return new Promise((resolve, reject) => {
+    mkdirp(dir, options, (error, made) => error === null ? resolve(made!) : reject(error))
+  })
+}
+
 export default async (modules: string, binPath: string, exceptPkgName?: string) => {
   const pkgDirs = await getPkgDirs(modules)
   return Promise.all(
@@ -39,18 +45,7 @@ export async function linkPackageBins (target: string, binPath: string) {
 
   if (!cmds.length) return
 
-  await new Promise((resolve: () => void, reject: (error: Error) => void) => {
-    mkdirp(
-      binPath,
-      (err: NodeJS.ErrnoException | undefined, made: mkdirp.Made) => {
-        if (err) {
-          reject(err);
-        } else {
-          resolve();
-        }
-      },
-    );
-  })
+  await mkdirPromise(binPath)
   await Promise.all(cmds.map(async (cmd) => {
     const externalBinPath = path.join(binPath, cmd.name)
 
